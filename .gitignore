@@ -1,0 +1,14 @@
+# env & caches
+.env
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+
+# telethon session files
+*.session
+*.session-journal
+.telethon.session*
+
+# reports (generated, do not auto-commit in CI)
+reports/*.md
