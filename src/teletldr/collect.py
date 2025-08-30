@@ -39,7 +39,11 @@ def collect_recent_24h(
         for m in client.iter_messages(entity, limit=None):
             if not m:
                 continue
-            m_date = m.date.replace(tzinfo=timezone.utc) if m.date.tzinfo is None else m.date.astimezone(timezone.utc)
+            m_date = (
+                m.date.replace(tzinfo=timezone.utc)
+                if m.date.tzinfo is None
+                else m.date.astimezone(timezone.utc)
+            )
             if m_date < start_utc:
                 break  # messages are newest-first
             text = m.message or ""
