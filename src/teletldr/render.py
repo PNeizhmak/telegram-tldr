@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 from .collect import RawMsg
 from .analyze import Highlight
-from .utils import public_link
+from .utils import public_link, trim
 
 def latest_report_path(dir_: str) -> str | None:
     p = Path(dir_)
@@ -89,6 +89,75 @@ def render_full(
                 lines.append(f"- {snippet} — [source]({link})")
             else:
                 lines.append(f"- {snippet}")
+    return "\n".join(lines)
+
+# New: Telegram-friendly compact summary
+
+def render_telegram_summary(
+    date_str: str,
+    window_str: str,
+    all_msgs: List[RawMsg],
+    highlights: List[Highlight],
+    keywords: List[str],
+    stats: dict,
+    max_links: int = 5,
+) -> str:
+    lines: List[str] = []
+    lines.append(f"**Engineering Digest — {date_str}**")
+    lines.append(f"Window: {window_str}")
+    lines.append("")
+
+    # Highlights (brief)
+    lines.append("**Highlights**")
+    if not highlights:
+        lines.append("— _No highlights today._")
+    else:
+        for h in highlights:
+            link = public_link(h.msg.channel_username, h.msg.msg_id)
+            title = h.msg.channel_title or "Channel"
+            head = f"• **{title}**"
+            if link:
+                head += f" — [source]({link})"
+            lines.append(head)
+            if h.summary:
+                lines.append(f"  {trim(h.summary, 300)}")
+    lines.append("")
+
+    # Top links (deduped, limited)
+    lines.append("**Top Links**")
+    seen = set()
+    added = 0
+    for m in all_msgs:
+        for u in m.urls:
+            if u in seen:
+                continue
+            lines.append(f"• [{u}]({u}) — {m.channel_title}")
+            seen.add(u)
+            added += 1
+            if added >= max_links:
+                break
+        if added >= max_links:
+            break
+    if added == 0:
+        lines.append("— _No links today._")
+    lines.append("")
+
+    # Keywords
+    if keywords:
+        lines.append("**Topics**")
+        lines.append(", ".join(f"`{k}`" for k in keywords[:20]))
+        lines.append("")
+
+    # Stats (compact)
+    if stats:
+        bc = stats.get("by_channel", {})
+        td = stats.get("top_domains", [])
+        if bc:
+            by_ch = ", ".join(f"{ch} ({n})" for ch, n in sorted(bc.items(), key=lambda t: (-t[1], t[0])))
+            lines.append(f"**By channel**: {by_ch}")
+        if td:
+            lines.append(f"**Top domains**: {', '.join(td[:8])}")
+
     return "\n".join(lines)
 
 def write_report(markdown: str, reports_dir: str, date_str: str) -> str:

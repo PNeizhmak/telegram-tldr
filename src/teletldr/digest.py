@@ -7,7 +7,7 @@ from .utils import now_vilnius, to_utc, format_window
 from .telegram_client import build_client, resolve_engineering_sources
 from .collect import collect_recent_24h
 from .analyze import analyze
-from .render import render_no_updates, render_full, write_report
+from .render import render_no_updates, render_full, render_telegram_summary, write_report
 from .deliver import send_to_private_channel
 
 def main():
@@ -32,10 +32,19 @@ def main():
     window_str = format_window(start_vil, now_vil)
 
     if not msgs:
-        md = render_no_updates(date_str, window_str)
+        md_full = render_no_updates(date_str, window_str)
+        md_tg = md_full
     else:
         res = analyze(msgs, kw_count=kw_count, highlights_count=highlights)
-        md = render_full(
+        md_full = render_full(
+            date_str=date_str,
+            window_str=window_str,
+            all_msgs=msgs,
+            highlights=res["highlights"],
+            keywords=res["keywords"],
+            stats=res["stats"],
+        )
+        md_tg = render_telegram_summary(
             date_str=date_str,
             window_str=window_str,
             all_msgs=msgs,
@@ -44,14 +53,14 @@ def main():
             stats=res["stats"],
         )
 
-    out_path = write_report(md, reports_dir="reports", date_str=date_str)
+    out_path = write_report(md_full, reports_dir="reports", date_str=date_str)
 
-    # Deliver to Telegram private channel
-    send_to_private_channel(md)
+    # Deliver compact summary to Telegram private channel
+    send_to_private_channel(md_tg)
 
     # Log a short preview
-    print(md.splitlines()[0] if md else "")
-    print(md.splitlines()[1] if len(md.splitlines()) > 1 else "")
+    print(md_tg.splitlines()[0] if md_tg else "")
+    print(md_tg.splitlines()[1] if len(md_tg.splitlines()) > 1 else "")
 
 if __name__ == "__main__":
     main()
