@@ -1,0 +1,33 @@
+name: Telegram TLDR — Daily Digest
+
+on:
+  schedule:
+    - cron: '25 6 * * *'   # 06:25 UTC ≈ 09:25 Europe/Vilnius (DST aware)
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run digest (renders and delivers to Telegram)
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          TELEGRAM_DELIVERY_CHANNEL: ${{ secrets.TELEGRAM_DELIVERY_CHANNEL }}
+          TZ: Europe/Vilnius
+          PYTHONPATH: src
+        run: |
+          python -m teletldr.digest
