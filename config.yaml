@@ -1,0 +1,12 @@
+use_folder: "Engineering"
+
+channels:
+  - "kotlinlang"
+  - "python_ru"
+  - "tech_news_daily"
+
+min_chars: 120
+max_per_channel: 200
+
+highlights: 10
+keywords: 15
