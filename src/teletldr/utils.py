@@ -30,4 +30,3 @@ def public_link(username: str | None, msg_id: int | None) -> str | None:
     if username and msg_id:
         return f"https://t.me/{username}/{msg_id}"
     return None
-
